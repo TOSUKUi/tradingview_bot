@@ -3,11 +3,17 @@ function onOpen(){
   .createMenu('botControl')
   .addItem('Run bot', 'trigger')
   .addItem('Stop bot', 'delTrigger')
-  .addItem('Test order', 'bot')
+  .addItem('Test order', 'testrun')
   .addToUi()
 }
 
+function testrun(){
+  createTableIfNotExist()
+  bot()
+}
+
 function trigger(){
+  createTableIfNotExist()
   var triggers = ScriptApp.getProjectTriggers();
   var ss = SpreadsheetApp.getActive()
   var sheet = ss.getSheetByName("bot稼働状況")

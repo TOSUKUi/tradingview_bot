@@ -1,5 +1,4 @@
 function bot() {
-  createTableIfNotExist()
   var configs = configration();
   var mail = checkGmailUpdate();
   var statuses = getStatus();
@@ -167,7 +166,21 @@ function formatStopLossExecutedMessage(order, platform, strategy){
 }
 
 function getStatus(){
-  return getSymbolAndData("戦略ステータス")
+  var spreadSheet = SpreadsheetApp.getActive()
+  var sheet = spreadSheet.getSheetByName("戦略ステータス")
+  var dataValues = sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn()).getValues()
+  var headers = dataValues[0]
+  var dataArray = dataValues.slice(1)
+  var dataObj = {}
+  dataArray.forEach(function(datalist){
+    dataBody = datalist.slice(1)
+    dataSymbol = datalist[0]
+    dataObj[dataSymbol] = {}
+    for(var i=0; i<dataBody.length; i++){
+      dataObj[dataSymbol][headers[i+1]] = dataBody[i] == "" ? 0 : dataBody[i]
+    }
+  })
+  return dataObj
 }
 
 function formatMessage(strategy, order, op, platform){
