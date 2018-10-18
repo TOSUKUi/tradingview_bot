@@ -2,6 +2,7 @@
 
 function getTableIdFromName(tableName){
   var tables = FusionTables.Table.list()
+  if(!tables["items"]){return}
   var targetTable = deleteUndefinedFromArray(tables["items"].map(function(table){if(table["name"] == tableName) return table}))
   if(!targetTable){return}
   return targetTable["tableId"]
