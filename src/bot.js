@@ -1,37 +1,41 @@
 function bot() {
-  var configs = configration();
-  var mail = checkGmailUpdate();
-  var statuses = getStatus();
-  Object.keys(configs).forEach(function(symbol){
-    try{
-      if(configs[symbol]["稼働"]) {
-        var api = new APIInterface()[configs[symbol]["プラットフォーム"]](configs[symbol]["APIkey"], configs[symbol]["APIsecret"])
-        if(mail){
-          if(mail[symbol]){
-            var op = parseOperation(mail[symbol]["operation"])
-            var orders = orderBot(api, configs[symbol], op, statuses[symbol])
-            var order = orders[0]
-            var cancelOrder = orders[1]
-            if(order){
-              Logger.log(order)
-              setStatus(symbol, order[1])
-              appendOrder(order[0], op, configs[symbol]["プラットフォーム"], order[1]["orderSeriesID"], symbol)
-              order[0].map(function(ord){return formatMessage(symbol, ord, op, configs[symbol]["プラットフォーム"])}).forEach(chatMessage)
-            }
-            if(cancelOrder){
-              cancelOrder.forEach(updateOrderLog)
+  try{
+    var configs = configration();
+    var mail = checkGmailUpdate();
+    var statuses = getStatus();
+    Object.keys(configs).forEach(function(symbol){
+      try{
+        if(configs[symbol]["稼働"]) {
+          var api = new APIInterface()[configs[symbol]["プラットフォーム"]](configs[symbol]["APIkey"], configs[symbol]["APIsecret"])
+          if(mail){
+            if(mail[symbol]){
+              var op = parseOperation(mail[symbol]["operation"])
+              var orders = orderBot(api, configs[symbol], op, statuses[symbol])
+              var order = orders[0]
+              var cancelOrder = orders[1]
+              if(order){
+                Logger.log(order)
+                setStatus(symbol, order[1])
+                appendOrder(order[0], op, configs[symbol]["プラットフォーム"], order[1]["orderSeriesID"], symbol)
+                order[0].map(function(ord){return formatMessage(symbol, ord, op, configs[symbol]["プラットフォーム"])}).forEach(chatMessage)
+              }
+              if(cancelOrder){
+                cancelOrder.forEach(updateOrderLog)
+              }
             }
           }
+          //TODO: stopオーダーがfilledした結果をfusionTableに書き込む
+          var filledStopOrders = checkActiveStopLossIsFilled(symbol, configs[symbol], api, statuses[symbol]["orderSeriesID"])
+          filledStopOrders.map(function(ord){return formatStopLossExecutedMessage(ord, configs[symbol]["プラットフォーム"], symbol)}).forEach(chatMessage)
+          filledStopOrders.forEach(updateOrderLog)
         }
-        //TODO: stopオーダーがfilledした結果をfusionTableに書き込む
-        var filledStopOrders = checkActiveStopLossIsFilled(symbol, configs[symbol], api, statuses[symbol]["orderSeriesID"])
-        filledStopOrders.map(function(ord){return formatStopLossExecutedMessage(ord, configs[symbol]["プラットフォーム"], symbol)}).forEach(chatMessage)
-        filledStopOrders.forEach(updateOrderLog)
+      }catch(e){
+        chatMessage(symbol + ":" + e.name + ":" + e.message)
       }
-    }catch(e){
-      chatMessage(symbol + ":" + e.name + ":" + e.message)
-    }
-  })
+    })
+  }catch(e){
+    chatMessage(e.message)
+  }
 }
 
 function orderBot(api, config, op, status){
@@ -44,8 +48,7 @@ function orderFlow(api, op, config, statuses){
   if(statuses["orderSeriesID"] == ""){statuses["orderSeriesID"] = 0}
   var numPyramidding = statuses["ピラミッディング数"]
   var pyramidding = config["最大ピラミッディング"]
-  var response = api.getPosition(config["ticker"])
-  var position = JSON.parse(response)
+  var position = api.getPosition(config["ticker"])
   var currentQty = 0
   if(position.length > 0){
     currentQty = position[0]["currentQty"]

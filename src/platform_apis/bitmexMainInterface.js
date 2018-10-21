@@ -55,18 +55,14 @@ bitmexInterface.prototype.marketStopOrder = function(symbol, side, pegOffsetValu
   }else if(pegPriceType == "トレーリングストップ"){
     params = {"symbol": symbol, "side": side, "pegOffsetValue": pegOffsetValue, "orderQty": orderQty, "pegPriceType": "TrailingStopPeg"}
   }
-  Logger.log(params)
   var position = this.sendRequest_(params, "POST", path, 0)
-  Logger.log(position)
   return this.parse_order(position)
 }
 
-
 bitmexInterface.prototype.sendRequest_ = function(params, method, path, numResend){
-  if (numResend > 10){throw new HTTPException("Too much resend request")}
+  if (numResend > 50){throw new HTTPException("Too much resend request")}
   var api_url = "";
   api_url = this.api_url;
-  Logger.log(params)
   var path = path;
   d = new Date()
   var nonce = d.getTime().toString()
@@ -98,12 +94,12 @@ bitmexInterface.prototype.sendRequest_ = function(params, method, path, numResen
     Utilities.sleep(500)
     return this.sendRequest_(params, method, path, numResend + 1)
   }
-  return response
+  return JSON.myParse(response)
 }
 
 bitmexInterface.prototype.checkHttpError = function(response){
-  res = JSON.parse(response)
   code = response.getResponseCode()
+  res = JSON.myParse(response)
   if(code >= 400){
     if(code == 503){
       return "Resend"
@@ -111,6 +107,7 @@ bitmexInterface.prototype.checkHttpError = function(response){
       throw new HTTPException(res["error"]["message"] + "HTTPCode" + code + ":" + res["error"]["name"])
     }
   }
+  
 }
 
 bitmexInterface.prototype.makeMexSignature = function(apiSecret, verb, expires, path, payload){
@@ -131,14 +128,7 @@ bitmexInterface.prototype.hex = function(signature){
   return sign
 }
 
-bitmexInterface.prototype.parse_order = function(order){
-  Logger.log(order)
-  var ordOrg = JSON.parse(order)
-  return this.formatOrder(ordOrg)
-  
-}
-
-bitmexInterface.prototype.formatOrder = function(ordOrg){
+bitmexInterface.prototype.parse_order = function(ordOrg){
   return {
     "ticker": ordOrg["symbol"],
     "side": ordOrg["side"],
@@ -154,7 +144,6 @@ bitmexInterface.prototype.formatOrder = function(ordOrg){
   }
 }
 
-bitmexInterface.prototype.parse_orders = function(order){
-  var ordOrgs = JSON.parse(order)
-  return ordOrgs.map(this.formatOrder)
+bitmexInterface.prototype.parse_orders = function(orders){
+  return orders.map(this.parse_order)
 }

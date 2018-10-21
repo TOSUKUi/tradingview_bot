@@ -8,6 +8,7 @@ function onOpen(){
 }
 
 function testrun(){
+  validate()
   createTableIfNotExist()
   bot()
 }
@@ -51,23 +52,23 @@ function onEdit(){
 }
 
 function setValidateTicker(){
-   var ss = SpreadsheetApp.getActive()
-   var config = ss.getSheetByName("調整項目")
-   var pltsheet = ss.getSheetByName("tradingPlatform")
-   var platforms = reduceDim(pltsheet.getRange(2, 2, pltsheet.getLastRow()-1 ).getValues())
-   var tickers = getTickers()
-   var rules_ticker = {}
-   for(var i=0; i < platforms.length; i++){
-     rules_ticker[platforms[i]] = SpreadsheetApp.newDataValidation().requireValueInList(tickers[platforms[i]])
-   }
-   var platformConfig = reduceDim(config.getRange(2, 2, config.getLastRow() - 1).getValues())
-   
-   var targetCells = config.getRange(2, 9, config.getLastRow() - 1)
-   var rulesCell = []
-   for(var i=0; i < platformConfig.length; i++){
-     rulesCell[i] = [rules_ticker[platformConfig[i]]]
-   }
-   targetCells.setDataValidations(rulesCell)
+  var ss = SpreadsheetApp.getActive()
+  var config = ss.getSheetByName("調整項目")
+  var pltsheet = ss.getSheetByName("tradingPlatform")
+  var platforms = reduceDim(pltsheet.getRange(2, 2, pltsheet.getLastRow()-1 ).getValues())
+  var tickers = getTickers()
+  var rules_ticker = {}
+  for(var i=0; i < platforms.length; i++){
+    rules_ticker[platforms[i]] = SpreadsheetApp.newDataValidation().requireValueInList(tickers[platforms[i]]).setAllowInvalid(false)
+  }
+  var platformConfig = reduceDim(config.getRange(2, 2, config.getLastRow() - 1).getValues())
+
+  var targetCells = config.getRange(2, 9, config.getLastRow() - 1)
+  var rulesCell = []
+  for(var i=0; i < platformConfig.length; i++){
+    rulesCell[i] = [rules_ticker[platformConfig[i]]]
+  }
+  targetCells.setDataValidations(rulesCell)
 }
 
 function reduceDim(array){
@@ -90,4 +91,74 @@ function getTickers(){
   }
   return tickers
   Logger.log(tickers)
+}
+
+function validate(){
+  var alerts = validateConfigs().concat(validateMessage())
+  if(alerts.length > 0){
+    Logger.log(alerts.join(" | "))
+    Browser.msgBox(alerts.join("\\n"))
+    throw "入力箇所を修正して再度テストしてください"
+  }
+}
+
+function validateMessage(){
+  try{
+    chatMessage("テストメッセージ")
+  }catch(e){
+    return ["メッセージ送信設定が間違っている可能性があります"]
+  }
+  return []
+}
+
+
+function validateConfigs(){
+  var spreadSheet = SpreadsheetApp.getActive()
+  var sheet = spreadSheet.getSheetByName("調整項目")
+  var dataValues = sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn()).getValues()
+  var headers = dataValues[0]
+  var dataArray = dataValues.slice(1)
+  var alerts_list = []
+  symbols = []
+  dataArray.forEach(function(datalist){
+    var dataBody = datalist.slice(1)
+    var dataSymbol = datalist[0]
+    if(symbols.indexOf(dataSymbol) >= 0){
+      alerts_list.push("戦略シンボル" + dataSymbol + "が重複しています")
+    }
+    symbols.push(dataSymbol)
+    dataObj = {}
+    for(var i=0; i<dataBody.length; i++){
+      dataObj[headers[i+1]] = dataBody[i]
+    }
+    alerts_list = alerts_list.concat(validateConfig(dataSymbol, dataObj))
+  })
+  return alerts_list
+  
+}
+
+function validateConfig(dataSymbol, config){
+  if(dataSymbol == ""){throw "どれかしらの戦略シンボルが入力されていません"}
+  Logger.log(config)
+  var alerts = []
+  Object.keys(config).forEach(function(key){
+    if(key == "ストップのポジションとの差"){
+      if(config["ストップロスタイプ"] == "無し"){
+        return
+      }
+    }else if(config[key] == ""){
+      alerts.push("ストラテジー " + dataSymbol + " における " + key + " が入力されていません")
+    }else{
+      return
+    }
+  })
+  if(alerts.length == 0){
+    var api = new APIInterface()[config["プラットフォーム"]](config["APIkey"], config["APIsecret"])
+    try{
+      api.getPosition(config["ticker"])
+    }catch(e){
+      alerts.push("ストラテジー" + dataSymbol + "のAPI認証情報が間違っている可能性があります" + e.message)
+    }
+  }
+  return alerts
 }
