@@ -6,6 +6,9 @@ function trigger(){
   alertbotoriginv3.trigger()
 }
 
+function testrun(){
+  alertbotoriginv3.testrun()
+}
 
 function delTrigger(){
   alertbotoriginv3.delTrigger()

@@ -10,3 +10,7 @@ function MailError(message){
 function HTTPException(message){
     return new Exception("HTTPException", message)
 }
+
+function MyParseException(message){
+  return new Exception("JSONParseException", message)
+}

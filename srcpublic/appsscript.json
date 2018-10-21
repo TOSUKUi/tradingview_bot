@@ -1,0 +1,17 @@
+{
+  "timeZone": "Asia/Tokyo",
+  "dependencies": {
+    "enabledAdvancedServices": [{
+      "userSymbol": "FusionTables",
+      "serviceId": "fusiontables",
+      "version": "v2"
+    }],
+    "libraries": [{
+      "userSymbol": "alertbotoriginv3",
+      "libraryId": "1dLXVLsswT5OXeq7-hnVNq4P6oPveFXKyxfgsw4n1n6EgQhj89G30rQy7",
+      "version": "1",
+      "developmentMode": true
+    }]
+  },
+  "exceptionLogging": "STACKDRIVER"
+}

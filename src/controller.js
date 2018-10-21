@@ -106,7 +106,7 @@ function validateMessage(){
   try{
     chatMessage("テストメッセージ")
   }catch(e){
-    return ["メッセージ送信設定が間違っている可能性があります"]
+    return ["メッセージ送信設定が間違っている可能性があります: " + e]
   }
   return []
 }
