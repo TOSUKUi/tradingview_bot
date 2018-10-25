@@ -171,16 +171,23 @@ function formatStopLossExecutedMessage(order, platform, strategy){
 function getStatus(){
   var spreadSheet = SpreadsheetApp.getActive()
   var sheet = spreadSheet.getSheetByName("戦略ステータス")
-  var dataValues = sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn()).getValues()
+  var dataValues = sheet.getDataRange().getValues()
   var headers = dataValues[0]
   var dataArray = dataValues.slice(1)
   var dataObj = {}
+  Logger.log(dataArray)
   dataArray.forEach(function(datalist){
+    if(datalist[0] == ""){return}
     dataBody = datalist.slice(1)
     dataSymbol = datalist[0]
     dataObj[dataSymbol] = {}
+    Logger.log(dataBody)
     for(var i=0; i<dataBody.length; i++){
-      dataObj[dataSymbol][headers[i+1]] = dataBody[i] == "" ? 0 : dataBody[i]
+      Logger.log(headers.length)
+      if(headers[i+1] == "orderSeriesID"){dataObj[dataSymbol][headers[i+1]] = getMaxOrderSeriesOfSymbol(dataSymbol)}
+      else{
+        dataObj[dataSymbol][headers[i+1]] = dataBody[i] == "" ? 0 : dataBody[i]
+      }
     }
   })
   return dataObj
