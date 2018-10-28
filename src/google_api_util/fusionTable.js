@@ -2,6 +2,7 @@
 
 function getTableIdFromName(tableName){
   var tables = FusionTables.Table.list()
+  if(!tables["items"]){return}
   var targetTable = deleteUndefinedFromArray(tables["items"].map(function(table){if(table["name"] == tableName) return table}))
   if(!targetTable){return}
   return targetTable["tableId"]
@@ -11,6 +12,14 @@ function deleteUndefinedFromArray(array){
   for(var i = 0; i < array.length; i++){
     if(array[i]) return array[i];
   }
+}
+
+function getMaxOrderSeriesOfSymbol(symbol){
+  var tableId = getTableIdFromName("TBOT_処理結果")
+  var sql = "SELECT MAXIMUM(orderSeriesID) FROM " + tableId + " WHERE '戦略シンボル' = '" + symbol + "'"
+  var res = FusionTables.Query.sql(sql)
+  if(res.rows){return parseInt(res.rows[0][0])}
+  else{return 0}
 }
 
 function getActiveStopLossByOrderSeries(symbol, orderSeriesID){

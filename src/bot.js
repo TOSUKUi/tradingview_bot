@@ -1,38 +1,40 @@
 function bot() {
-  createTableIfNotExist()
-  var configs = configration();
-  var mail = checkGmailUpdate();
-  var statuses = getStatus();
-  Object.keys(configs).forEach(function(symbol){
-    try{
-      if(configs[symbol]["稼働"]) {
-        var api = new APIInterface()[configs[symbol]["プラットフォーム"]](configs[symbol]["APIkey"], configs[symbol]["APIsecret"])
-        if(mail){
-          if(mail[symbol]){
-            var op = parseOperation(mail[symbol]["operation"])
-            var orders = orderBot(api, configs[symbol], op, statuses[symbol])
-            var order = orders[0]
-            var cancelOrder = orders[1]
-            if(order){
-              Logger.log(order)
-              setStatus(symbol, order[1])
-              appendOrder(order[0], op, configs[symbol]["プラットフォーム"], order[1]["orderSeriesID"], symbol)
-              order[0].map(function(ord){return formatMessage(symbol, ord, op, configs[symbol]["プラットフォーム"])}).forEach(chatMessage)
-            }
-            if(cancelOrder){
-              cancelOrder.forEach(updateOrderLog)
+  try{
+    var configs = configration();
+    var mail = checkGmailUpdate();
+    var statuses = getStatus();
+    Object.keys(configs).forEach(function(symbol){
+      try{
+        if(configs[symbol]["稼働"]) {
+          var api = new APIInterface()[configs[symbol]["プラットフォーム"]](configs[symbol]["APIkey"], configs[symbol]["APIsecret"])
+          if(mail){
+            if(mail[symbol]){
+              var op = parseOperation(mail[symbol]["operation"])
+              var orders = orderBot(api, configs[symbol], op, statuses[symbol])
+              var order = orders[0]
+              var cancelOrder = orders[1]
+              if(order){
+                Logger.log(order)
+                setStatus(symbol, order[1])
+                appendOrder(order[0], op, configs[symbol]["プラットフォーム"], order[1]["orderSeriesID"], symbol)
+                order[0].map(function(ord){return formatMessage(symbol, ord, op, configs[symbol]["プラットフォーム"])}).forEach(chatMessage)
+              }
+              if(cancelOrder){
+                cancelOrder.forEach(updateOrderLog)
+              }
             }
           }
+          var filledStopOrders = checkActiveStopLossIsChanged(symbol, configs[symbol], api, statuses[symbol]["orderSeriesID"])
+          filledStopOrders.map(function(ord){return formatStopLossExecutedOrCanccelledMessage(ord, configs[symbol]["プラットフォーム"], symbol)}).forEach(chatMessage)
+          filledStopOrders.forEach(updateOrderLog)
         }
-        //TODO: stopオーダーがfilledした結果をfusionTableに書き込む
-        var filledStopOrders = checkActiveStopLossIsFilled(symbol, configs[symbol], api, statuses[symbol]["orderSeriesID"])
-        filledStopOrders.map(function(ord){return formatStopLossExecutedMessage(ord, configs[symbol]["プラットフォーム"], symbol)}).forEach(chatMessage)
-        filledStopOrders.forEach(updateOrderLog)
+      }catch(e){
+        chatMessage(symbol + ":" + e.name + ":" + e.message)
       }
-    }catch(e){
-      chatMessage(symbol + ":" + e.name + ":" + e.message)
-    }
-  })
+    })
+  }catch(e){
+    chatMessage(e.message)
+  }
 }
 
 function orderBot(api, config, op, status){
@@ -45,8 +47,7 @@ function orderFlow(api, op, config, statuses){
   if(statuses["orderSeriesID"] == ""){statuses["orderSeriesID"] = 0}
   var numPyramidding = statuses["ピラミッディング数"]
   var pyramidding = config["最大ピラミッディング"]
-  var response = api.getPosition(config["ticker"])
-  var position = JSON.parse(response)
+  var position = api.getPosition(config["ticker"])
   var currentQty = 0
   if(position.length > 0){
     currentQty = position[0]["currentQty"]
@@ -150,24 +151,47 @@ function appendOrder(order, op, platform, orderSeriesID, symbol){
 }
 
 // ストップロスがfilledされた場合(毎分チェック用)
-function checkActiveStopLossIsFilled(symbol, config, api, orderSeriesID){
+function checkActiveStopLossIsChanged(symbol, config, api, orderSeriesID){
   var stopLoss = getActiveStopLossByOrderSeries(symbol, orderSeriesID)
   if(stopLoss.rows){
     var orderIDs = stopLoss.rows.map(function(row){return row[stopLoss.columns.indexOf("オーダーID")]})
     var currentOrders = getOrder(api, config, orderIDs)
-    return currentOrders.map(function(order){if(order["オーダーステータス"] == "Filled") return order}) 
-  }else{
+    return currentOrders.map(function(order){if(order["オーダーステータス"] == "Filled" || order["オーダーステータス"] == "Canceled") return order}) 
+  }
+  else{
     return []
   }
 }
 
-function formatStopLossExecutedMessage(order, platform, strategy){
+function formatStopLossExecutedOrCanccelledMessage(order, platform, strategy){
   if(!order) return ;
-  return "[" + Utilities.formatDate(d, "JST","yyyy/MM/dd hh:mm:ss") + "] Strategy " + strategy + " stopLoss is Filled " + order["side"] + " in " +  platform + " ticker " + order["ticker"] + " amount " + order["ポジションサイズ"] + " price at " + order["執行価格"] 
+  var execPrice = function(execPrice){return execPrice ? " price at " + execPrice : ""}
+  return "[" + Utilities.formatDate(d, "JST","yyyy/MM/dd hh:mm:ss") + "] Strategy " + strategy + " stopLoss is " + order["オーダーステータス"]  + " [Side " + order["side"]  + " Platform "  +  platform + " ticker " + order["ticker"] + " amount " + order["ポジションサイズ"] + execPrice(order["約定価格"]) + "]"
 }
 
 function getStatus(){
-  return getSymbolAndData("戦略ステータス")
+  var spreadSheet = SpreadsheetApp.getActive()
+  var sheet = spreadSheet.getSheetByName("戦略ステータス")
+  var dataValues = sheet.getDataRange().getValues()
+  var headers = dataValues[0]
+  var dataArray = dataValues.slice(1)
+  var dataObj = {}
+  Logger.log(dataArray)
+  dataArray.forEach(function(datalist){
+    if(datalist[0] == ""){return}
+    dataBody = datalist.slice(1)
+    dataSymbol = datalist[0]
+    dataObj[dataSymbol] = {}
+    Logger.log(dataBody)
+    for(var i=0; i<dataBody.length; i++){
+      Logger.log(headers.length)
+      if(headers[i+1] == "orderSeriesID"){dataObj[dataSymbol][headers[i+1]] = getMaxOrderSeriesOfSymbol(dataSymbol)}
+      else{
+        dataObj[dataSymbol][headers[i+1]] = dataBody[i] == "" ? 0 : dataBody[i]
+      }
+    }
+  })
+  return dataObj
 }
 
 function formatMessage(strategy, order, op, platform){
@@ -185,7 +209,6 @@ function formatMessage(strategy, order, op, platform){
     return message
   }
 }
-
 
 function getSymbolAndData(sheetName){
   var spreadSheet = SpreadsheetApp.getActive()
