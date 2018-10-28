@@ -14,6 +14,14 @@ function deleteUndefinedFromArray(array){
   }
 }
 
+function getMaxOrderSeriesOfSymbol(symbol){
+  var tableId = getTableIdFromName("TBOT_処理結果")
+  var sql = "SELECT MAXIMUM(orderSeriesID) FROM " + tableId + " WHERE '戦略シンボル' = '" + symbol + "'"
+  var res = FusionTables.Query.sql(sql)
+  if(res.rows){return parseInt(res.rows[0][0])}
+  else{return 0}
+}
+
 function getActiveStopLossByOrderSeries(symbol, orderSeriesID){
   var tableId = getTableIdFromName("TBOT_処理結果")
   var sql = "SELECT orderSeriesID, 'オーダーID', '戦略シンボル' FROM "+ tableId + " WHERE 'オーダーステータス' = 'New' AND 'orderSeriesID' = " + orderSeriesID + " AND 'オーダータイプ' = 'Stop' AND '戦略シンボル' = '" + symbol + "'"
