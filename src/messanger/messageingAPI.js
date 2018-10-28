@@ -1,6 +1,3 @@
-// TODO: 
-// [] 1
-
 function chatMessage(message){
   var sheet = SpreadsheetApp.getActive().getSheetByName("メッセージ")
   var messageConfig = sheet.getRange(2, 1, 1, 2).getValues()
