@@ -1,29 +1,34 @@
 var bitmexInterface = function(){
+  this.nextRequest = 0
 }
   
 bitmexInterface.prototype.marketOrder = function(symbol, side, orderQty){
   var path = "/api/v1/order";
   var params = {"symbol": symbol, "side": side, "orderQty": orderQty, "ordType": "Market"};
-  return this.parse_order(this.sendRequest_(params, "POST", path, 0))
+  var public = false
+  return this.parse_order(this.sendRequest_(params, "POST", path, 0, public))
   
 }
 
 bitmexInterface.prototype.getOrders = function(symbol, orderIDs){
   var path = "/api/v1/order";
   var params = {"symbol": symbol, "orderID": orderIDs};
-  return this.parse_orders(this.sendRequest_(params, "GET", path, 0))
+  var public = false
+  return this.parse_orders(this.sendRequest_(params, "GET", path, 0, public))
 }
 
 bitmexInterface.prototype.marketCloseOrder = function(symbol){
   var path = "/api/v1/order/closePosition"
   var params = {"symbol": symbol}
-  return this.parse_order(this.sendRequest_(params, "POST", path, 0))
+  var public = false
+  return this.parse_order(this.sendRequest_(params, "POST", path, 0, public))
 }
 
 bitmexInterface.prototype.getPosition = function(symbol){
   var path = "/api/v1/position"
   var params = {"symbol": symbol}
-  var position = this.sendRequest_(params, "GET", path, 0)
+  var public = false
+  var position = this.sendRequest_(params, "GET", path, 0, public)
   return position
 }
 
@@ -34,19 +39,22 @@ bitmexInterface.prototype.cancelOrder = function(symbol, orderIDs){
   var path = "/api/v1/order"
   var params = {"symbol": symbol, "orderID": orderIDs}
   var method = "DELETE"
-  return this.parse_orders(this.sendRequest_(params, method, path, 0))
+  var public = false
+  return this.parse_orders(this.sendRequest_(params, method, path, 0, public))
 }
 
 bitmexInterface.prototype.cancelAllOrder = function(symbol){
   var path = "/api/v1/order/all"
   var params = {"symbol": symbol}
   var method = "DELETE"
-  return this.parse_orders(this.sendRequest_(params, method, path, 0))
+  var public = false
+  return this.parse_orders(this.sendRequest_(params, method, path, 0, public))
 }
 
 bitmexInterface.prototype.marketStopOrder = function(symbol, side, pegOffsetValue, pegPriceType, orderQty, positionPrice){
   var path = "/api/v1/order"
   var params = {}
+  var public = false
   if(pegPriceType == "無し"){return}
   if(pegPriceType == "ストップロス"){
     Logger.log(positionPrice)
@@ -55,12 +63,20 @@ bitmexInterface.prototype.marketStopOrder = function(symbol, side, pegOffsetValu
   }else if(pegPriceType == "トレーリングストップ"){
     params = {"symbol": symbol, "side": side, "pegOffsetValue": pegOffsetValue, "orderQty": orderQty, "pegPriceType": "TrailingStopPeg"}
   }
-  var position = this.sendRequest_(params, "POST", path, 0)
+  var position = this.sendRequest_(params, "POST", path, 0, public)
   return this.parse_order(position)
 }
 
-bitmexInterface.prototype.sendRequest_ = function(params, method, path, numResend){
-  if (numResend > 50){throw new HTTPException("Too much resend request")}
+bitmexInterface.prototype.activeTicker = function(){
+  var path = "/api/v1/instrument/active"
+  var params = {}
+  var method = "GET"
+  var public = true
+  return this.sendRequest_(params, method, path, 0, public)
+}
+
+bitmexInterface.prototype.sendRequest_ = function(params, method, path, numResend, public){
+  if (numResend > 15){throw new HTTPException("Too much resend request")}
   var api_url = "";
   api_url = this.api_url;
   var path = path;
@@ -87,12 +103,13 @@ bitmexInterface.prototype.sendRequest_ = function(params, method, path, numResen
       var payload = ''
       var signature = this.makeMexSignature(this.api_secret, method, nonce, query, payload)
       option["headers"]["api-signature"] = signature
+      if(public){option["headers"] = undefined}
     }
-
+  waitUntil(this.nextRequest)
   var response = UrlFetchApp.fetch(api_url+query, option)
+  this.nextRequest = Date.now() + 2000
   if(this.checkHttpError(response) == "Resend"){
-    Utilities.sleep(500)
-    return this.sendRequest_(params, method, path, numResend + 1)
+    return this.sendRequest_(params, method, path, numResend + 1, public)
   }
   return JSON.myParse(response)
 }
@@ -106,8 +123,7 @@ bitmexInterface.prototype.checkHttpError = function(response){
     }else{
       throw new HTTPException(res["error"]["message"] + "HTTPCode" + code + ":" + res["error"]["name"])
     }
-  }
-  
+  } 
 }
 
 bitmexInterface.prototype.makeMexSignature = function(apiSecret, verb, expires, path, payload){
