@@ -14,6 +14,7 @@ function testrun(){
 }
 
 function trigger(){
+  validate()
   createTableIfNotExist()
   var triggers = ScriptApp.getProjectTriggers();
   var ss = SpreadsheetApp.getActive()
@@ -23,7 +24,7 @@ function trigger(){
   var botTrigger = undefined
   for(var i=0; i < triggers.length; i++) {
     if (triggers[i].getHandlerFunction() == "bot") {
-      botTrigger = ScriptApp.deleteTrigger(triggers[i]);
+      botTrigger = triggers[i]
     }
   }
   if(statusVal == "稼働中" || botTrigger){
@@ -31,6 +32,11 @@ function trigger(){
   }else{
     ScriptApp.newTrigger("bot").timeBased().everyMinutes(1).create();
     status.setValue("稼働中")
+    chatMessage(
+    "------------------------------------------------\n" + 
+    "[" + Date.now() + "]BOT is started\n" + 
+    "------------------------------------------------\n"
+    )
   }
 }
 
@@ -45,6 +51,10 @@ function delTrigger(){
   var sheet = ss.getSheetByName("bot稼働状況")
   var status = sheet.getRange(1,1)
   status.setValue("停止中")
+
+  "------------------------------------------------\n" + 
+  "[" + Date.now() + "]BOT is stopped\n" + 
+  "------------------------------------------------\n"
 }
 
 function onEdit(){
@@ -98,7 +108,7 @@ function validate(){
   if(alerts.length > 0){
     Logger.log(alerts.join(" | "))
     Browser.msgBox(alerts.join("\\n"))
-    throw "入力箇所を修正して再度テストしてください"
+    throw "警告箇所を修正して再度テストしてください"
   }
 }
 
@@ -147,6 +157,7 @@ function validateConfig(dataSymbol, config){
         return
       }
     }else if(config[key] == ""){
+      if(key=="稼働" && config[key]==false){return}
       alerts.push("ストラテジー " + dataSymbol + " における " + key + " が入力されていません")
     }else{
       return
@@ -161,4 +172,14 @@ function validateConfig(dataSymbol, config){
     }
   }
   return alerts
+}
+
+
+function AutoActiveTickerGetter(){
+  try{
+    api = new APIInterface()["bitmex_testnet"]("", "")
+    tickers = api.activeTicker()
+  }catch(e){
+    throw e.name + e.message
+  }
 }
