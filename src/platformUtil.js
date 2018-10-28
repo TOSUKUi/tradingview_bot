@@ -67,3 +67,10 @@ function reverseBuySell(buySell){
     return "Buy"
   }
 }
+
+function waitUntil(time){
+  var delta = time - Date.now()
+  if(delta > 0){
+    Utilities.sleep(delta)
+  }
+}
