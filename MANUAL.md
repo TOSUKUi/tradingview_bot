@@ -7,6 +7,8 @@
   - [目次](#目次)
   - [始め方](#始め方)
     - [用意するもの](#用意するもの)
+      - [LINE notify token](#line-notify-token)
+      - [BITMEX API key と API secret](#bitmex-api-key-と-api-secret)
     - [初期設定](#初期設定)
     - [注意すべき点](#注意すべき点)
   - [細かい設定方法](#細かい設定方法)
@@ -23,9 +25,29 @@
 ## 始め方
 本項ではこのbotを使うにあたって用意すべきものを紹介し、まず注文を入れて見るところまでを説明します。また、設定時の注意点なども合わせて紹介します。
 ### 用意するもの
-* LINE
-  * LINE notify token
-* 
+大まかに2つあります.
+#### LINE notify token
+* みなさんLineについては言わずもがな持っているかと思います。今回はLineに対してプログラムが通知を送るための準備をします。
+  ![Line](images/linenotify.png)
+  Line notify とはプログラムから自分のLineへ通知を送る際に使うサービスです。その際、Line notify tokenという個人に紐付いたトークン(ランダムな文字列)が必要になります。  
+* トークンの取得方法
+  * [Line notify](https://notify-bot.line.me/ja/)へアクセスしてログイン
+  * 右上の∨を押してマイページへ移動![マイページ](images/linenotifymypage.png)
+  * 下の方に行くとトークンを発行するというボタンがあるので選択![tokenpublish](images/tokenpublish.png)
+  * トークン名を適当な名前にし、1:1でLine notifyから通知を受け取るを選択し、発行します。![tokenpublihing](images/tokenpublishing.png)
+  * すると、このような画面が表示され、真ん中のエリアにトークンが表示されるのでこちらをメモなどに控えておきましょう。![savetoken](images/accesstoken.png)
+#### BITMEX API key と API secret
+* BITMEXにおいて、プログラムから注文を発行したり、ポジションの情報を取得するためにBITMEX API keyおよびAPI secretというものが必要になってきます。
+* apikey secretの取得方法
+  * 本アプリケーションを購入いただいた段階でBitmexのアカウントは持っているかと思いますので、アカウント作成などは割愛いたします。
+  * BITMEXの上段メニューにAPIという項目があります(画像上四角)。これを押すと画像のような画面になり、左側に「APIキーの管理」という項目がありますのでこれを押します。![bitmexapi](images/mexapikey.png)
+  * するとAPIの発行フォームが出てくるので適切な値を入れます。
+    * 名前は適当なものをつけておくとよいでしょう。
+    * キーのアクセス許可は注文にします。
+    * 出金については本ボットでは触れることはないのでチェックを付けないようにしてください。(漏洩した場合大変なことになりますので)
+    * 2要素トークンを入力し、発行を押すと下の方にAPIキーとシークレット(秘密)が表示されるのでメモしておきましょう。
+    * 
+![bitmexapiform](images/mexapikeypublish.png)
 ### 初期設定
 ### 注意すべき点
 -----
