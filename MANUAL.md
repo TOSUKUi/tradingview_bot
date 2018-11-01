@@ -35,12 +35,16 @@
 * トークンの取得方法
   * [Line notify](https://notify-bot.line.me/ja/)へアクセスしてログイン
   * 右上の∨を押してマイページへ移動
+
     <img src="images/linenotifymypage.png" width=480>
   * 下の方に行くとトークンを発行するというボタンがあるので選択
+
     <img src="images/tokenpublish.png" width=480>
   * トークン名を適当な名前にし、1:1でLine notifyから通知を受け取るを選択し、発行します。
+
     <img src="images/tokenpublishing.png" height=480>
   * すると、このような画面が表示され、真ん中のエリアにトークンが表示されるのでこちらをメモなどに控えておきましょう。
+
     <img src="images/accesstoken.png" width=480>
   * これで、Line notifyトークンの発行は完了です。
 #### BITMEX API key と API secret
@@ -48,6 +52,7 @@
 * apikey secretの取得方法
   * 本アプリケーションを購入いただいた段階でBitmexのアカウントは持っているかと思いますので、アカウント作成などは割愛いたします。
   * BITMEXの上段メニューにAPIという項目があります(画像上四角)。これを押すと画像のような画面になり、左側に「APIキーの管理」という項目がありますのでこれを押します。
+
   <img src="images/mexapikey.png" width=480>
   * するとAPIの発行フォームが出てくるので適切な値を入れます。
     * 名前は適当なものをつけておくとよいでしょう。
