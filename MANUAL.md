@@ -28,13 +28,14 @@
 大まかに2つあります.
 #### LINE notify token
 * みなさんLineについては言わずもがな持っているかと思います。今回はLineに対してプログラムが通知を送るための準備をします。
+
   <img src="images/linenotify.png" width=640>
   Line notify とはプログラムから自分のLineへ通知を送る際に使うサービスです。その際Line notify tokenという個人に紐付いたトークン(ランダムな文字列)が必要になります。  
 * トークンの取得方法
   * [Line notify](https://notify-bot.line.me/ja/)へアクセスしてログイン
   * 右上の∨を押してマイページへ移動![マイページ](images/linenotifymypage.png)
   * 下の方に行くとトークンを発行するというボタンがあるので選択![tokenpublish](images/tokenpublish.png)
-  * トークン名を適当な名前にし、1:1でLine notifyから通知を受け取るを選択し、発行します。<img src="images/tokenpublishing.png" height=320>
+  * トークン名を適当な名前にし、1:1でLine notifyから通知を受け取るを選択し、発行します。<img src="images/tokenpublishing.png" height=480>
   * すると、このような画面が表示され、真ん中のエリアにトークンが表示されるのでこちらをメモなどに控えておきましょう。![savetoken](images/accesstoken.png)
 #### BITMEX API key と API secret
 * BITMEXにおいて、プログラムから注文を発行したり、ポジションの情報を取得するためにBITMEX API keyおよびAPI secretというものが必要になってきます。
