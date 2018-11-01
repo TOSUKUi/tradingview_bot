@@ -34,7 +34,7 @@ function trigger(){
     status.setValue("稼働中")
     chatMessage(
     "------------------------------------------------\n" + 
-    "[" + Date.now() + "]BOT is started\n" + 
+    "[" + Utilities.formatDate(new Date(), "JST","yyyy/MM/dd hh:mm:ss") + "]BOT is started\n" + 
     "------------------------------------------------\n"
     )
   }
@@ -45,16 +45,18 @@ function delTrigger(){
   for(var i=0; i < triggers.length; i++) {
     if (triggers[i].getHandlerFunction() == "bot") {
       ScriptApp.deleteTrigger(triggers[i]);
+      var ss = SpreadsheetApp.getActive()
+      var sheet = ss.getSheetByName("bot稼働状況")
+      var status = sheet.getRange(1,1)
+      status.setValue("停止中")
+      chatMessage(
+      "------------------------------------------------\n" + 
+      "[" + Utilities.formatDate(new Date(), "JST","yyyy/MM/dd hh:mm:ss") + "]BOT is stopped\n" + 
+      "------------------------------------------------\n"
+      )
     }
   }
-  var ss = SpreadsheetApp.getActive()
-  var sheet = ss.getSheetByName("bot稼働状況")
-  var status = sheet.getRange(1,1)
-  status.setValue("停止中")
-
-  "------------------------------------------------\n" + 
-  "[" + Date.now() + "]BOT is stopped\n" + 
-  "------------------------------------------------\n"
+  
 }
 
 function onEdit(){
@@ -78,6 +80,7 @@ function setValidateTicker(){
   for(var i=0; i < platformConfig.length; i++){
     rulesCell[i] = [rules_ticker[platformConfig[i]]]
   }
+  config.getRange("I:I").clearDataValidations()
   targetCells.setDataValidations(rulesCell)
 }
 
@@ -152,12 +155,9 @@ function validateConfig(dataSymbol, config){
   Logger.log(config)
   var alerts = []
   Object.keys(config).forEach(function(key){
-    if(key == "ストップのポジションとの差"){
-      if(config["ストップロスタイプ"] == "無し"){
-        return
-      }
-    }else if(config[key] == ""){
+    if(config[key] == ""){
       if(key=="稼働" && config[key]==false){return}
+      if(key=="ストップのポジションとの差" && config["ストップロスタイプ"] == "無し"){return}
       alerts.push("ストラテジー " + dataSymbol + " における " + key + " が入力されていません")
     }else{
       return
@@ -176,10 +176,19 @@ function validateConfig(dataSymbol, config){
 
 
 function AutoActiveTickerGetter(){
-  try{
-    api = new APIInterface()["bitmex_testnet"]("", "")
+  var ss = SpreadsheetApp.getActive()
+  var pltsheet = ss.getSheetByName("tradingPlatform")
+  var platforms = reduceDim(pltsheet.getRange(2, 2, pltsheet.getLastRow()-1 ).getValues())
+  platTickers = []
+  platforms.forEach(function(platform){
+    var api = new APIInterface()[platform]("ticker", "get")
     tickers = api.activeTicker()
-  }catch(e){
-    throw e.name + e.message
-  }
+    tickers.forEach(function(ticker){
+      platTickers.push([platform, ticker["symbol"]])
+    })
+  })
+  var tickers = ss.getSheetByName("tickers")
+  tickers.getRange(2, 2, tickers.getLastRow()-1, 2).clear()
+  tickers.getRange(2, 2, platTickers.length, 2).setValues(platTickers)
 }
+
