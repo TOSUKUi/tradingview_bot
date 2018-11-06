@@ -148,6 +148,7 @@
 
       <img src="images/notconfirm.png" width=320>
     * 左下の詳細ボタンを押すとこのようになります。
+
       <img src="images/notconfirm_detail.png" width=320>
 
     * 「右のalert_bot_originv3 public(安全ではないページ) に移動」をクリックすると認証画面に移ります。
