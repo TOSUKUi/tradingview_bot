@@ -1,6 +1,6 @@
 function onOpen(){
   SpreadsheetApp.getUi()
-  .createMenu('botControl')
+  .createMenu('TBOTControl')
   .addItem('Run bot', 'trigger')
   .addItem('Stop bot', 'delTrigger')
   .addItem('Test order', 'testrun')
