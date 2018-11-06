@@ -151,7 +151,7 @@
 
       <img src="images/notconfirm_detail.png" width=320>
 
-    * 「右のalert_bot_originv3 public(安全ではないページ) に移動」をクリックすると認証画面に移ります。
+    * 「alert_bot_originv3 public(安全ではないページ) に移動」をクリックすると認証画面に移ります。
     * ここで認証していただければ、入力チェックが行われます。
   * 入力チェックが正しくないとこのようなエラーが出てきます。
   
